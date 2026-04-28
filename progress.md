@@ -115,7 +115,8 @@ As a result, our system now behaves more like a true ML-powered security solutio
 
 
 
-**Checkpoint 4**
+
+#**Checkpoint 4**
 
 **Problem Identified**
 

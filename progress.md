@@ -50,6 +50,8 @@ behavioural anomaly detection, and real-time owner alerts to stop unauthorised a
 3. **Monitoring Interval**
    - Increased check interval from 5 → 8 seconds
    - Gives owner time to move naturally
+  
+     
 
 ### Checkpoint 2 Results ✅
 ✅ False positive rate: 40% → <5%  
@@ -99,3 +101,14 @@ behavioural anomaly detection, and real-time owner alerts to stop unauthorised a
 ---
 
 *The Shield That Never Sleeps 🛡️*
+
+
+
+
+## ✅ Checkpoint 3
+
+We identified and fixed a major issue in our system’s behavior logic. Initially, EscudoAI was triggering alerts separately for each suspicious activity, such as private file access and phone recording. This resulted in multiple alerts being sent to the user for a single incident, which is not ideal in a real-world security system. We recognized that this approach made the system feel less intelligent and could confuse the user.
+
+To solve this, we upgraded our design from an event-based system to a session-based detection model. Instead of reacting instantly to every signal, your system now collects multiple suspicious activities over a short time window and evaluates them together. We introduced an alert cooldown mechanism that prevents repeated alerts within a few seconds, allowing the system to aggregate signals and generate a single, more meaningful alert based on the combined fraud score.
+
+As a result, our system now behaves more like a true ML-powered security solution. It reduces alert spam, improves decision-making clarity, and provides a more professional and user-friendly experience. This enhancement also strengthens your project from a presentation perspective, as you can now explain that your model uses temporal aggregation of behavioral signals to produce high-confidence fraud detection outcomes.

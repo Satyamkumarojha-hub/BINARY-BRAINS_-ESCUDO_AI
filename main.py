@@ -1,15 +1,24 @@
 # main.py - EscudoAI
 
 import cv2
-import asyncio
 import threading
 import time
+import os
+from datetime import datetime
 from face_detector import verify_face
 from auth import show_lock_screen
 from scorer import add_signal, is_fraud, reset_score, get_score
 from alerter import trigger_alert
 from monitor import start_bot_listener
-from signal_detector import check_all_signals, start_file_monitor, detect_phone_in_frame
+from signal_detector import detect_phone_in_frame
+
+from config import SCORES
+
+import sys, warnings
+if sys.platform == "win32":
+    import asyncio
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+warnings.filterwarnings("ignore", category=ResourceWarning)
 
 last_alert_time = 0
 ALERT_COOLDOWN = 15  # seconds
@@ -26,6 +35,11 @@ RAPID_CHECK_COUNT     = 4    # how many rapid checks before asking password
 # Shared camera frame (updated by camera thread, read by phone monitor)
 latest_frame = None
 frame_lock = threading.Lock()
+
+
+def is_unauthorized_active():
+    """Callable for file watcher to check if unauthorized user is active."""
+    return unauthorized_user_active
 
 
 def monitor_camera():
@@ -100,10 +114,11 @@ def monitor_camera():
             intruder_photo = None
             ret2, snap = cam.read()
             if ret2:
-                import os, cv2 as _cv2
                 os.makedirs("screenshots", exist_ok=True)
-                intruder_photo = "screenshots/intruder_face.jpg"
-                _cv2.imwrite(intruder_photo, snap)
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                intruder_photo = f"screenshots/intruder_{timestamp}.jpg"
+                cv2.imwrite(intruder_photo, snap)
+                print(f"[EscudoAI] 📷 Intruder photo captured: {intruder_photo}")
 
             cam.release()
             result = show_lock_screen(intruder_photo=intruder_photo)
@@ -152,7 +167,7 @@ def _start_file_watcher():
 
         def _is_private(self, path):
             skip = ["logs", "venv", "screenshots", ".git", "AppData",
-                    "Windows", "__pycache__", "Temp", "temp"]
+                    "Windows", "__pycache__", "Temp", "temp", "captures"]
             if any(s.lower() in path.lower() for s in skip):
                 return False
             private_exts = [
@@ -181,6 +196,7 @@ def _start_file_watcher():
                 return
             fname = os.path.basename(path)
             print(f"[EscudoAI] 📂 {event_type}: {fname} — sending IMMEDIATE alert!")
+            # ✅ FIXED: add_signal() takes only 1 parameter
             add_signal("private_file")
             send_file_access_alert(event_type, path)
 
@@ -221,6 +237,7 @@ def _start_file_watcher():
 
 
 def monitor_behaviour():
+    """Monitor fraud score and send alerts when threshold is breached."""
     global alert_sent, last_alert_time
     print("[EscudoAI] Behaviour monitor started...")
 
@@ -232,7 +249,8 @@ def monitor_behaviour():
                 trigger_alert()
                 last_alert_time = current_time
                 alert_sent = True
-                asyncio.run(start_bot_listener())
+                # ✅ FIXED: Don't wrap in asyncio.run() — start_bot_listener() is sync
+                threading.Thread(target=start_bot_listener, daemon=True).start()
                 reset_score()
                 alert_sent = False
             else:
@@ -256,14 +274,31 @@ def monitor_cables():
             cable = detect_cable_insertion()
 
             if cable["usb_new"]:
-                print("[EscudoAI] 🔌 USB insertion confirmed — adding signal!")
-                add_signal("usb_inserted", ", ".join(cable["devices"]) if cable["devices"] else "")
-                send_cable_alert("USB", cable["devices"])
+                devices = cable["devices"] if cable["devices"] else ["Unknown USB device"]
+                print(f"[EscudoAI] 🔌 USB detected: {devices}")
+                # ✅ FIXED: add_signal() takes only 1 parameter
+                add_signal("usb_inserted")
+                print(f"[EscudoAI] Added {SCORES.get('usb_inserted', 25)} pts to fraud score.")
+                
+                # ✅ Send immediate Telegram alert
+                threading.Thread(
+                    target=send_cable_alert,
+                    args=("USB Device", devices),
+                    daemon=True
+                ).start()
 
             if cable["hdmi_new"]:
-                print("[EscudoAI] 🖥️  HDMI cable confirmed — adding signal!")
-                add_signal("hdmi_connected")
-                send_cable_alert("HDMI / Display cable", [])
+                print(f"[EscudoAI] 🖥️  HDMI/Display cable detected!")
+                # ✅ FIXED: use correct signal name from config.py
+                add_signal("cable_connected")
+                print(f"[EscudoAI] Added {SCORES.get('cable_conected', 35)} pts to fraud score.")
+                
+                # ✅ Send immediate Telegram alert
+                threading.Thread(
+                    target=send_cable_alert,
+                    args=("HDMI/Display Cable", ["External display detected"]),
+                    daemon=True
+                ).start()
 
         except Exception as e:
             print(f"[EscudoAI] Cable monitor error: {e}")
@@ -283,12 +318,14 @@ def monitor_phone_recording():
 
             if frame is not None and detect_phone_in_frame(frame):
                 print("\n[EscudoAI] 🚨 PHONE RECORDING ATTEMPT DETECTED!")
+                # ✅ FIXED: add_signal() takes only 1 parameter
                 add_signal("phone_recording")
                 print("[EscudoAI] Sending IMMEDIATE alert for phone recording...")
                 from alerter import send_phone_recording_alert
                 send_phone_recording_alert()
                 phone_alert_sent = True
-                asyncio.run(start_bot_listener())
+                # ✅ FIXED: Don't wrap in asyncio.run() — start_bot_listener() is sync
+                threading.Thread(target=start_bot_listener, daemon=True).start()
                 phone_alert_sent = False
                 unauthorized_user_active = False
         time.sleep(1)

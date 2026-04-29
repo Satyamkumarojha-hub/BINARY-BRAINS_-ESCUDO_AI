@@ -325,3 +325,65 @@ USB data theft
 External display spying
 Improves ML decision accuracy
 Makes alerts clear, detailed, and actionable
+
+## **CHECKPOINT 6 — SUMMARY** 
+What We Built:
+EscudoAI — A real-time computer security guardian that uses face recognition, fraud scoring, file monitoring, and Telegram alerts to protect your computer from unauthorized access.
+
+**4 Critical Bugs Fixed:**
+
+NameError Crash — session_signals undefined → renamed to triggered_signals 
+Loose Face Recognition — Threshold 0.75 (too lenient) → 0.40 (strict owner-only) 
+Wrong Function Parameters — add_signal() called with 2 params instead of 1 (fixed in 5+ locations) 
+Telegram Buttons Dead — drop_pending_updates=True ignored button clicks → changed to False 
+
+
+**5 Major Enhancements Added:**
+
+Smart Camera Timing — 10 sec normal, 5 sec rapid checks, owner return recovery
+Intruder Photo Capture — Captures face the moment unauthorized detected
+File Access Alerts — Real-time monitoring with screenshot + camera photo
+Cable/USB Detection — Continuous monitoring for hardware threats
+Working Telegram Buttons — ALLOW/DENY responses now work instantly
+
+
+**System Architecture:**
+4 Parallel Threads:
+
+Camera Monitor (face recognition)
+Behaviour Monitor (fraud scoring)
+Phone Monitor (recording detection)
+Cable Monitor (hardware threats)
+
+**Alert Types:**
+
+Unauthorized access → lock screen + intruder photo
+Failed password (3×) → Telegram alert with evidence
+File access → Immediate Telegram alert
+Cables inserted → Immediate Telegram alert
+Fraud threshold → Consolidated Telegram alert
+Phone recording → Immediate Telegram alert
+
+
+**Test Results:**
+ All core features operational
+ Face recognition accurate
+ Lock screen working
+ Telegram alerts sending
+ Buttons responding
+ Photos capturing
+ Fraud scoring working
+ Threading stable
+ No crashes
+
+**Files Delivered:**
+Fixed Files:
+
+main_corrected.py — Complete main orchestrator
+scorer.py — Fixed crash, working scoring
+face_detector.py — Strict recognition, proper error handling
+signal_detector.py — All signals fixed
+monitor_fixed.py — Working Telegram buttons
+
+**New Files:**
+file_watcher.py — Real-time file monitoring

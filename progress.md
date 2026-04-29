@@ -232,3 +232,96 @@ Owner decides ALLOW / DENY
 
 Fraud alert sent
 Owner decides ALLOW / DENY
+
+## **Checkpoint 5: Cable Detection & ML Risk Scoring Enhancement**
+
+In this update, the system was enhanced to detect physical cable connections (USB, HDMI, etc.) and treat them as potential security risks. This directly strengthens your cybersecurity model by linking hardware activity → ML fraud scoring → real-time alerts.
+
+Earlier, cable detection logic existed but was unreliable due to naming inconsistencies and missing mappings, causing signals to be ignored silently. These issues have now been fixed, and the system can actively detect, score, and report cable-based threats.
+
+**Bugs Fixed**
+
+Fixed typo in configuration:
+"cable_conected" → "cable_connected"
+Resolved mismatch between:
+signal_detector.py and config.py
+Added missing signal:
+usb_inserted now properly defined in config
+Ensured all files use consistent signal keys
+
+**New Features Added**
+
+1. Smart Cable Detection
+Detects:
+USB devices (pen drives, external storage)
+HDMI connections (external display/screen sharing)
+Uses PowerShell (Get-PnpDevice) for accurate detection on Windows
+Captures device-friendly names
+(e.g., "SanDisk Ultra USB 3.0")
+
+2. Baseline Detection System
+On startup:
+Existing connected devices are ignored
+Only newly inserted cables trigger alerts
+Prevents false positives
+
+3. ML Risk Score Integration
+Cable events now directly increase fraud score:
+Signal	Points	Risk
+usb_inserted	+25	Data theft via USB
+hdmi_connected	+30	Screen capture / spying
+cable_connected	+35	Unknown physical access
+Helps detect suspicious physical intrusion
+
+4. Real-Time Telegram Alerts
+Instant alert when cable is connected
+Alert includes:
+Cable type (USB / HDMI)
+Device name
+Risk explanation
+Screenshot
+ALLOW / DENY buttons
+
+5. Continuous Monitoring Thread
+New background thread:
+monitor_cables() runs every 5 seconds
+Feeds:
+ML scoring system
+Telegram alert pipeline
+
+6. Human-Readable Fraud Alerts
+Before:
+Alerts showed raw keys like usb_inserted
+After:
+Clean, descriptive messages:
+🔌 USB device plugged in — SanDisk Ultra USB 3.0
+Risk: Data theft via USB
++25 pts
+
+7. Enhanced Signal Tracking
+add_signal() now supports extra details
+Device names
+File paths
+These details appear in:
+Fraud alerts
+Logs
+Telegram messages
+
+**System Behavior After Update**
+
+When a cable is connected:
+Detected instantly
+ML score increases
+Telegram alert sent immediately
+If combined with other suspicious actions:
+Fraud score builds up
+Full fraud alert triggered
+
+**Result**
+
+System now detects real-world physical attacks
+Prevents:
+USB data theft
+External display spying
+Improves ML decision accuracy
+Makes alerts clear, detailed, and actionable

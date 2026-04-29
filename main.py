@@ -240,6 +240,37 @@ def monitor_behaviour():
         time.sleep(2)
 
 
+def monitor_cables():
+    """
+    Poll every 5 seconds for new USB / HDMI cables.
+    Feeds scorer + fires immediate Telegram alert on detection.
+    Runs always — cables are suspicious even before password is entered.
+    """
+    from signal_detector import detect_cable_insertion
+    from alerter import send_cable_alert
+
+    print("[EscudoAI] 🔌 Cable monitor started...")
+
+    while True:
+        try:
+            cable = detect_cable_insertion()
+
+            if cable["usb_new"]:
+                print("[EscudoAI] 🔌 USB insertion confirmed — adding signal!")
+                add_signal("usb_inserted", ", ".join(cable["devices"]) if cable["devices"] else "")
+                send_cable_alert("USB", cable["devices"])
+
+            if cable["hdmi_new"]:
+                print("[EscudoAI] 🖥️  HDMI cable confirmed — adding signal!")
+                add_signal("hdmi_connected")
+                send_cable_alert("HDMI / Display cable", [])
+
+        except Exception as e:
+            print(f"[EscudoAI] Cable monitor error: {e}")
+
+        time.sleep(5)
+
+
 def monitor_phone_recording():
     """Monitor for phone recording attempts — IMMEDIATE ALERT."""
     global phone_alert_sent, unauthorized_user_active
@@ -277,13 +308,15 @@ if __name__ == "__main__":
     print("[EscudoAI] System starting...")
     print("[EscudoAI] Press Ctrl+C to stop\n")
 
-    cam_thread   = threading.Thread(target=monitor_camera,          daemon=True)
-    beh_thread   = threading.Thread(target=monitor_behaviour,       daemon=True)
+    cam_thread   = threading.Thread(target=monitor_camera,           daemon=True)
+    beh_thread   = threading.Thread(target=monitor_behaviour,        daemon=True)
     phone_thread = threading.Thread(target=monitor_phone_recording,  daemon=True)
+    cable_thread = threading.Thread(target=monitor_cables,           daemon=True)
 
     cam_thread.start()
     beh_thread.start()
     phone_thread.start()
+    cable_thread.start()
 
     try:
         while True:

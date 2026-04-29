@@ -221,18 +221,14 @@ def check_all_signals(frame):
 
     # ── Cable / USB / HDMI ───────────────────────────────────
     cable = detect_cable_insertion()
-
     if cable["usb_new"]:
         add_signal("usb_inserted", ", ".join(cable["devices"]) if cable["devices"] else "")
-        # Send immediate Telegram alert
-        _alert_cable(
-            cable_type="USB",
-            devices=cable["devices"],
-        )
+        print(f"[EscudoAI] 🔌 USB signal recorded — score updated.")
 
     if cable["hdmi_new"]:
         add_signal("hdmi_connected")
-        _alert_cable(cable_type="HDMI / Display cable", devices=[])
+        print(f"[EscudoAI] 🖥️  HDMI signal recorded — score updated.")
+     
 
 
 def _alert_cable(cable_type: str, devices: list[str]):
@@ -242,7 +238,6 @@ def _alert_cable(cable_type: str, devices: list[str]):
         send_cable_alert(cable_type, devices)
     except Exception as e:
         print(f"[EscudoAI] Cable alert error: {e}")
-
 
 # ============================================================
 if __name__ == "__main__":

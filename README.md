@@ -134,6 +134,6 @@ Some system-level monitoring may require administrator permissions depending on 
 ## **Author:-**
 
 Developed by :  
-  Satyam Ojha  
+  Satyam Kumar Ojha  
   Parth Sharma  
   Krish Kumar  
